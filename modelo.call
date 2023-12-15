@@ -1,0 +1,10 @@
+Channel: SIP/<MATRICULA> ;numero a ser discado
+CallerID: "Central de Metas" <*777>  ;identificador da chamada
+MaxRetries: 3            ;numero de retentativas da chamada
+RetryTime: 30            ;intervalo entre as tentativas em segundos. Default:  300 (5 min)
+WaitTime: 30             ;segundos para aguardar o atendimentor. Default: 45
+Set: MATRICULA=<MATRICULA>
+Context: info-meta
+Extension: start
+Priority:1
+Archive: yes
