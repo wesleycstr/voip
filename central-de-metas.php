@@ -56,7 +56,7 @@
       if ($menu == '1'){
         menu_metas($agi, $matricula, $connect);
       }
-      if ($menu == '1'){
+      if ($menu == '2'){
         menu_ponto($agi, $matricula, $connect);
       }
     
@@ -133,17 +133,58 @@
           }
   }
   
-  function menu_ponto ($agi, $matricula, $connect){
-    $query = "SELECT * FROM indicadores WHERE matricula='$matricula'";
-    $resultado = mysqli_query($connect, $query);
+function menu_ponto ($agi, $matricula, $connect){
+    $agi->exec("playback","menu_marcacao_ponto");
+    $data = date("d-m-Y");
+    $query = "SELECT * FROM ponto WHERE data='$data' and matricula = '$matricula'";
+    $executar = mysqli_query($connect, $query);
+    $return = mysqli_fetch_assoc($executar);
+    
+    //tratamento dos numeros codigo e senha digitado pelo usuario
+    if(empty($return['data'])){
+        $result = $agi->get_data('digite_1_registrar_inicio_trabalho',5000 ,5); //$agi->get_data(<file to be streamed>, <timeout>, <max digits>)
+        $menu = $result['result'];
+        if ($menu == '1'){
+          date_default_timezone_set('America/Sao_Paulo');
+          $hora = date("H:i:s");
+          $query = "INSERT INTO ponto (matricula, data, entrada, status) VALUES ('$matricula', '$data', '$hora','trabalhando')";
+          $executar = mysqli_query($connect, $query);
+          $agi->exec("playback","marcacao_de_inicio_bem_sucedida");
+          menu_principal($agi, $matricula, $connect);
+        }
+        if ($menu == '0'){
+          menu_principal($agi, $matricula, $connect);
+		}
+	}
+	if(!empty($return['data']) AND ($return['status'] == 'trabalhando')){
+        $result = $agi->get_data('digite_1_registrar_termino_trabalho',5000 ,5); //$agi->get_data(<file to be streamed>, <timeout>, <max digits>)
+        $menu = $result['result'];
+        if ($menu == '1'){
+          date_default_timezone_set('America/Sao_Paulo');
+          $hora = date("H:i:s");
+          $query = "UPDATE ponto SET saida = '$hora', status = 'pausado' WHERE matricula = '$matricula' AND status = 'trabalhando'";
+          $executar = mysqli_query($connect, $query);
+          $agi->exec("playback","marcacao_de_termino_bem_sucedida");
+          menu_principal($agi, $matricula, $connect);
+        }
 
-          while ($row_registro = mysqli_fetch_assoc($resultado)){
-            $meta_atual = $row_registro['meta_atual'];
-            $valor_atual = $row_registro['valor_atual'];
-            $diferenca = $meta_atual - $valor_atual;
-          }
-  }
-  
+    }
+    if(!empty($return['data']) AND ($return['status'] == 'pausado')){
+        $result = $agi->get_data('digite_1_registrar_inicio_trabalho',5000 ,5); //$agi->get_data(<file to be streamed>, <timeout>, <max digits>)
+        $menu = $result['result'];
+        if ($menu == '1'){
+          date_default_timezone_set('America/Sao_Paulo');
+          $hora = date("H:i:s");
+          $query = "INSERT INTO ponto (matricula, data, entrada, status) VALUES ('$matricula', '$data', '$hora','trabalhando')";
+          $executar = mysqli_query($connect, $query);
+          $agi->exec("playback","marcacao_de_inicio_bem_sucedida");
+          menu_principal($agi, $matricula, $connect);
+        }
+        if ($menu == '0'){
+          menu_principal($agi, $matricula, $connect);
+        }
+    }
+}  
 login($agi, $connect);
   
 ?>
